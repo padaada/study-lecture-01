@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>철학 및 문학 논문 동향 대시보드 - 나전칠기 테마</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ridibatang';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+            min-height: 100vh;
+            padding: 30px;
+            color: #fff;
+            position: relative;
+            background-color: #000; /* 기본 배경색 */
+            overflow-x: hidden;
+        }
+
+        /* 배경 이미지 설정 및 불투명도(어둡게) 조정 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url(https://i.pinimg.com/1200x/d2/d2/98/d2d2989c4fc84e594ecbe46f13d864f6.jpg);
+            background-size: cover;
+            background-position: center;
+            opacity: 0.4; /* 50% 수준으로 어둡게 조절 (0.4 ~ 0.5 권장) */
+            z-index: -1;
+            filter: brightness(0.7) contrast(1.1); /* 미세한 보정으로 자개 느낌 강조 */
+        }
+
+        /* 배경 위 레이어 (가독성 확보를 위한 은은한 다크 오버레이) */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: auto;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05); /* 자개 배경을 위해 더 투명하게 조정 */
+            backdrop-filter: blur(12px);
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #b6bacf, #e4d5f2, #f7e1fa);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.06);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        /* 카드 그리드 배치 */
+        .card-main-stats { grid-column: span 5; grid-row: span 2; }
+        .card-zhuangzi { grid-column: span 4; grid-row: span 2; }
+        .card-application { grid-column: span 3; grid-row: span 2; }
+        .card-korean { grid-column: span 4; }
+        .card-foreign { grid-column: span 4; }
+        .card-debates { grid-column: span 4; }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #e0e0ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #ffe1f8, #fff8e6);
+            border-radius: 2px;
+        }
+
+        /* 내부 통계 및 텍스트 스타일 */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-row:last-child { border-bottom: none; }
+
+        .stat-label { font-size: 0.9rem; color: #d0d0f0; }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #edecd5, #a3c0d9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .list-item:last-child { border-bottom: none; }
+
+        .list-bullet {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fffce1, #ffc0e4);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .list-text { font-size: 0.85rem; color: #e0e0f0; line-height: 1.5; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-box-value { font-size: 1.8rem; font-weight: 700; color: #f0d6dc; }
+        .stat-box-label { font-size: 0.75rem; color: #aaa; margin-top: 5px; }
+
+        /* 바 차트 스타일 */
+        .bar-chart {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+
+        .bar-row { display: flex; align-items: center; margin-bottom: 5px; }
+
+        .bar-label { width: 120px; font-size: 1rem; color: #c0c0e0; flex-shrink: 0; }
+
+        .bar-container {
+            flex: 1;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dddec4, #bdf8ef);
+            border-radius: 10px;
+        }
+
+        .bar-value { width: 30px; font-size: 0.85rem; font-weight: 600; color: #9cc4dd; text-align: right; }
+
+        /* 태그 스타일 */
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag {
+            background: rgba(133, 181, 206, 0.2);
+            border: 1px solid rgba(124, 157, 211, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            color: #c4efe2;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .debate-item {
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: #d0d0f0;
+            border-left: 3px solid #eac9d1;
+        }
+
+        /* 헤더 타이틀 */
+        .header-title { text-align: center; margin-bottom: 50px; position: relative; z-index: 10; }
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+        }
+        .header-title p { font-size: 1rem; color: #ccc; margin-top: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .card-main-stats, .card-zhuangzi, .card-application, .card-korean, .card-foreign, .card-debates {
+                grid-column: span 6;
+                grid-row: span 1;
+            }
+        }
+        @media (max-width: 768px) {
+            .card-main-stats, .card-zhuangzi, .card-application, .card-korean, .card-foreign, .card-debates {
+                grid-column: span 12;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-title">
+        <h1>장자철학 논문분석과 소설,철학 비교분석</h1>
+        <p>KCI 논문 분석 통합 대시보드 · 나전칠기(螺鈿漆器) 테마</p>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- 카드 1: 메인 통계 -->
+        <div class="card card-main-stats">
+            <h2>철학, 소설 관련논문 48편 통계</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-box-value">87%</div>
+                    <div class="stat-box-label">서양철학 비중</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value">69%</div>
+                    <div class="stat-box-label">외국문학 선호</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value">30편</div>
+                    <div class="stat-box-label">철학 전통 명시</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value">39편</div>
+                    <div class="stat-box-label">소설 관련 논문</div>
+                </div>
+            </div>
+
+            <div class="section-title">서양철학 주요 논쟁</div>
+            <div class="debate-item">실존과 자유의 문제</div>
+            <div class="debate-item">이성 법칙 vs 예술의 픽션</div>
+            <div class="debate-item">공동체주의 vs 개인주의</div>
+
+            <div class="section-title">동양철학 주요 논쟁</div>
+            <div class="debate-item">공(空)과 재현의 한계</div>
+            <div class="debate-item">도가적 자연 질서의 가치</div>
+            <div class="debate-item">이성과 계시의 조화 가능성</div>
+        </div>
+
+        <!-- 카드 2: 장자 사상 연구 -->
+        <div class="card card-zhuangzi">
+            <h2>장자사상연구 주요쟁점</h2>
+            <p style="font-size: 0.8rem; color: #bbb; margin-bottom: 20px;">장자철학논문 232편 대상</p>
+            <div class="bar-chart">
+                <div class="bar-row">
+                    <span class="bar-label">제물론·만물제동</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 100%"></div></div>
+                    <span class="bar-value">16</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">무위자연</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 87%"></div></div>
+                    <span class="bar-value">14</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">물화·호접지몽</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 81%"></div></div>
+                    <span class="bar-value">13</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">무용지용</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 62%"></div></div>
+                    <span class="bar-value">10</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">소요유</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 56%"></div></div>
+                    <span class="bar-value">9</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">심재·허심</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 44%"></div></div>
+                    <span class="bar-value">7</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">안명·생사관</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 37%"></div></div>
+                    <span class="bar-value">6</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">진인·기인</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 37%"></div></div>
+                    <span class="bar-value">6</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카드 3: 장자 적용 주제 -->
+        <div class="card card-application">
+            <h2>장자철학 주요주제</h2>
+             <p style="font-size: 0.8rem; color: #bbb; margin-bottom: 20px;">장자철학논문 232편 대상</p>
+            <div class="bar-chart">
+                <div class="bar-row">
+                    <span class="bar-label">소통·관계 회복</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 100%"></div></div>
+                    <span class="bar-value">21</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">예술·미학</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 90%"></div></div>
+                    <span class="bar-value">19</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">서양철학 비교</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 67%"></div></div>
+                    <span class="bar-value">14</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">마음치유·상담</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 57%"></div></div>
+                    <span class="bar-value">12</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">생태윤리</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 48%"></div></div>
+                    <span class="bar-value">10</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">포스트휴먼·AI</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 48%"></div></div>
+                    <span class="bar-value">10</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">웰다잉 돌봄</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 43%"></div></div>
+                    <span class="bar-value">9</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">성과주의 비판</span>
+                    <div class="bar-container"><div class="bar-fill" style="width: 38%"></div></div>
+                    <span class="bar-value">8</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카드 4: 한국소설 사상 -->
+        <div class="card card-korean">
+            <h2>한국소설 주요 사상</h2>
+            <div class="tag-container">
+                <span class="tag">칸트 철학</span>
+                <span class="tag">인식론</span>
+                <span class="tag">윤리학</span>
+                <span class="tag">모더니즘</span>
+                <span class="tag">실존적 내면</span>
+                <span class="tag">랑시에르</span>
+                <span class="tag">미학과 정치</span>
+            </div>
+            <div class="section-title">주요 쟁점</div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">실존과 저항·자유의 언어</span>
+            </div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">공동체 윤리와 권력의 병리</span>
+            </div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">SF·판타지를 통한 현재적 질문</span>
+            </div>
+        </div>
+
+        <!-- 카드 5: 외국소설 사상 -->
+        <div class="card card-foreign">
+            <h2>외국소설 주요 사상</h2>
+            <div class="tag-container">
+                <span class="tag">하이데거</span>
+                <span class="tag">존재론</span>
+                <span class="tag">실존주의</span>
+                <span class="tag">계몽주의</span>
+                <span class="tag">이성주의</span>
+                <span class="tag">고대 자연철학</span>
+                <span class="tag">신화적 세계관</span>
+            </div>
+            <div class="section-title">주요 쟁점</div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">개인의 실존적 한계와 죽음</span>
+            </div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">서사 형식 자체의 철학적 실험</span>
+            </div>
+            <div class="list-item">
+                <span class="list-bullet"></span>
+                <span class="list-text">문명과 이데올로기 비판</span>
+            </div>
+        </div>
+
+        <!-- 카드 6: 데이터 요약 -->
+        <div class="card card-debates">
+            <h2>분석 데이터 요약</h2>
+            <div class="stat-row">
+                <span class="stat-label">총 분석 논문</span>
+                <span class="stat-value">280편</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">철학-소설 연관</span>
+                <span class="stat-value">48편</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">장자철학 논문</span>
+                <span class="stat-value">232편</span>
+            </div>
+            <div class="section-title">핵심 키워드</div>
+            <div class="tag-container">
+                <span class="tag">제물론</span>
+                <span class="tag">무위자연</span>
+                <span class="tag">호접지몽</span>
+                <span class="tag">소요유</span>
+                <span class="tag">심재</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
